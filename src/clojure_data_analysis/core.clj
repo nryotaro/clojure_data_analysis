@@ -7,6 +7,7 @@
 (defn count-words
   ([] {})
   ([freqs word]
+    (println "count word")
     (assoc freqs word (inc (get freqs word 0)))))
 
 (defn merge-counts
@@ -16,4 +17,12 @@
 (defn word-frequency [text]
   (r/fold merge-counts count-words (clojure.string/split text #"\s+")))
 
-(defn texts [] (str/split (slurp (io/resource "text.txt")) #"\r?\n"))
+(defn texts [filename] (str/split (slurp (io/resource filename)) #"\r?\n"))
+
+(defn chunks
+  [texts]
+  (map #(str/split % #"\s+") texts))
+
+
+
+
