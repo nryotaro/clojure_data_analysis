@@ -33,6 +33,8 @@
     :else n))
                                         ; (q/quick-bench (map #(map (fn [e] (fizzbuzz e)) %) (partition-all 500000 (range 1 1000000))))
 
+  
+
 (defn rand-point [] [(rand) (rand)])
 
 (defn center-dist [[x y]]
@@ -42,9 +44,17 @@
   [n]
   (->> (repeatedly n rand-point) (map center-dist) (filter #(<= % 1.0)) count))
 
+(defn count-in-circle2
+  [n]
+  (->> (repeatedly n rand-point) (r/map center-dist) (r/filter #(<= % 1.0)) count))
+
 (defn mc-pi
   [n]
   (* 4.0 (/ (count-in-circle n) n)))
+
+(defn mc-pi2
+  [n]
+  (* 4.0 (/ (count-in-circle2 n) n)))
 
 (defn in-circle-flag
   [p]
@@ -56,6 +66,28 @@
                        (pmap in-circle-flag)
                        (reduce + 0))]
     (* 4.0 (/ in-circle n))))
+
+(defn mc-pi-pmap2
+  [n]
+  (let [in-circle (->> (repeatedly n rand-point)
+                       (r/map in-circle-flag)
+                       (reduce + 0))]
+    (* 4.0 (/ in-circle n))))
+
+(defn temp
+  ([]
+   0)
+  ([acc e]
+   (println "temp")
+   (+ acc e)))
+(defn my-pi
+  [n]
+  (let [c (->> (repeatedly n rand-point)
+               (r/map #(do (println "ccc") (if (<= (center-dist %) 1.0) 1 0)))
+               (r/fold 10 temp temp))]
+    (* 4.0 (/ c n))))
+
+; use reducers
 
 (defn mc-pi-part
   ([n] (mc-pi-part 512 n))
