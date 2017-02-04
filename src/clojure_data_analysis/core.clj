@@ -8,7 +8,7 @@
 (defn count-words
   ([] {})
   ([freqs word]
-    (println "count word")
+;    (println "count word")
     (assoc freqs word (inc (get freqs word 0)))))
 
 (defn merge-counts
@@ -33,7 +33,25 @@
     :else n))
                                         ; (q/quick-bench (map #(map (fn [e] (fizzbuzz e)) %) (partition-all 500000 (range 1 1000000))))
 
-  
+(defn wc
+  [lst]
+  (reduce #(assoc %1 %2 (inc (get %1 %2 0))) {} lst))
+
+(def a (range 1 100000))
+(defn fb
+  [n]
+  (->> (range 1 n)
+       (map fizzbuzz)
+       (filter string?)
+       (reduce #(assoc %1 %2 (inc (get %1 %2 0))) {})
+       ))
+
+(defn fb2
+  [n c]
+  (->> (range 1 n)
+       (r/map fizzbuzz)
+       (r/filter string?)
+       (r/fold c merge-counts count-words)))  
 
 (defn rand-point [] [(rand) (rand)])
 
@@ -47,6 +65,13 @@
 (defn count-in-circle2
   [n]
   (->> (repeatedly n rand-point) (r/map center-dist) (r/filter #(<= % 1.0)) count))
+
+(defn calc-pi
+  [n]
+  (letfn [(dist-from-origin [[x y]] (Math/sqrt (+ (* x x) (* y y))))
+          x(count-in-circle [dots] (count (filter #(<= % 1.0) dots)))]
+    (let [dots (map dist-from-origin (repeatedly n (fn [] [(rand) (rand)])))]
+      (* 4.0 (/ (count-in-circle dots) n)))))
 
 (defn mc-pi
   [n]
