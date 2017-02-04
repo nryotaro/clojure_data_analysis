@@ -15,6 +15,8 @@
   ([] {})
   ([& m] (apply merge-with + m)))
 
+
+; make upper-case
 (defn word-frequency [text]
   (r/fold merge-counts count-words (clojure.string/split text #"\s+")))
 
@@ -32,10 +34,17 @@
     (= (mod n 5) 0) "Buzz"
     :else n))
                                         ; (q/quick-bench (map #(map (fn [e] (fizzbuzz e)) %) (partition-all 500000 (range 1 1000000))))
+(defn gen-az [] (lazy-seq (cons (str (char (+ (int \a) (rand-int 26)))) (gen-az))))
+
+(defn gen-az2 [] (lazy-seq (cons (do (println "!")(str (char (+ (int \a) (rand-int 26))))) (gen-az2))))
 
 (defn wc
   [lst]
-  (reduce #(assoc %1 %2 (inc (get %1 %2 0))) {} lst))
+  (reduce #(do (println "!!") (assoc %1 %2 (inc (get %1 %2 0)))) {} lst))
+
+(defn wc-p [lst chunk-size]
+  (let [parts (partition-all (int (/ (count lst) chunk-size)) lst)]
+  (apply merge-with + (pmap wc parts))))
 
 (def a (range 1 100000))
 (defn fb
@@ -69,9 +78,19 @@
 (defn calc-pi
   [n]
   (letfn [(dist-from-origin [[x y]] (Math/sqrt (+ (* x x) (* y y))))
-          x(count-in-circle [dots] (count (filter #(<= % 1.0) dots)))]
+          (count-in-circle [dots] (count (filter #(<= % 1.0) dots)))]
     (let [dots (map dist-from-origin (repeatedly n (fn [] [(rand) (rand)])))]
       (* 4.0 (/ (count-in-circle dots) n)))))
+
+(defn calc-pi2
+  [n chunk-size]
+  (letfn [(dist-from-origin [[x y]] (Math/sqrt (+ (* x x) (* y y))))
+          (count-in-circle [dots] (count (filter #(<= % 1.0) dots)))]
+    (let [chunks (partition-all chunk-size (repeatedly n (fn [] [(rand) (rand)])))
+          dots-in-circle (reduce + 0 (pmap #(count-in-circle (map (fn [e] (dist-from-origin e)) %)) chunks))]
+      (* 4.0 (/ dots-in-circle n)))))
+
+
 
 (defn mc-pi
   [n]
@@ -108,7 +127,7 @@
 (defn my-pi
   [n]
   (let [c (->> (repeatedly n rand-point)
-               (r/map #(do (println "ccc") (if (<= (center-dist %) 1.0) 1 0)))
+               (r/filter #(<= (center-dist %) 1.0))
                (r/fold 10 temp temp))]
     (* 4.0 (/ c n))))
 
@@ -128,8 +147,54 @@
                                  parts))]
      (* 4.0 (/ in-circle n)))))
 
+
+
+
 (def chunk-size 4096)
 
 (def input-size 1000000)
 
 (def fib-seq (lazy-cat [0 1] (map + (rest fib-seq) fib-seq)))
+
+(defn get-temp [r] (- 1.0 (float r)))
+
+(defn get-neighbor
+  [state]
+  (max 0 (min 19 (+ state (- (rand-int 11) 5)))))
+
+(defn get-wc-cost
+  [n state]
+  (let [chunk-size (long (Math/pow 2 state))]
+    (first (:mean (q/quick-benchmark
+                   (wc-p (take n (gen-az)) (min chunk-size n))
+                   {})))))
+
+(defn should-move
+  [c0 c1 t]
+  (* t (if (< c0 c1) 0.25 1.0)))
+
+(defn annealing
+  [initial max-iter max-cost
+   neighbor-fn cost-fn p-fn temp-fn]
+  (let [get-cost (memoize cost-fn)
+        cost (get-cost initial)]
+    (loop [state initial
+           cost cost
+           k 1
+           best-seq [{:state state, :cost cost}]]
+      (println '>>> 'sa k \. state \$ cost)
+      (if (and (< k max-iter)
+               (or (nil? max-cost)
+                   (> cost max-cost)))
+        (let [t (temp-fn (/ k max-iter))
+              next-state (neighbor-fn state)
+              next-cost (get-cost next-state)
+              next-place {:state next-state,
+                          :cost next-cost}]
+          (if (> (p-fn cost next-cost t) (rand))
+            (recur next-state next-cost (inc k)
+                   (conj best-seq next-place))
+            (recur state cost (inc k) best-seq)))
+        best-seq))))
+
+;(annealing 10 10 nil get-neighbor (partial get-wc-cost 1000000) should-move get-temp)
