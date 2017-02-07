@@ -40,13 +40,14 @@
 
 (defn wc
   [lst]
-  (reduce #(do (println "!!") (assoc %1 %2 (inc (get %1 %2 0)))) {} lst))
+  (reduce #(assoc %1 %2 (inc (get %1 %2 0))) {} lst))
 
 (defn wc-p [lst chunk-size]
+  (println chunk-size) 
   (let [parts (partition-all (int (/ (count lst) chunk-size)) lst)]
   (apply merge-with + (pmap wc parts))))
 
-(def a (range 1 100000))
+
 (defn fb
   [n]
   (->> (range 1 n)
@@ -160,7 +161,7 @@
 
 (defn get-neighbor
   [state]
-  (max 0 (min 19 (+ state (- (rand-int 11) 5)))))
+  (max 1 (min 20 (+ state (- (rand-int 11) 5)))))
 
 (defn get-wc-cost
   [n state]
@@ -168,6 +169,11 @@
     (first (:mean (q/quick-benchmark
                    (wc-p (take n (gen-az)) (min chunk-size n))
                    {})))))
+
+(defn get-wc-cost2
+  [lst state]
+  (-> (q/quick-benchmark (wc-p lst state) {}) :mean first))
+
 
 (defn should-move
   [c0 c1 t]
@@ -197,4 +203,35 @@
             (recur state cost (inc k) best-seq)))
         best-seq))))
 
+(defn annealing2
+  [init max-iter neighbor-fn cost-fn p-fn temp-fn]
+  (let [init-cost (cost-fn init)]
+    (loop [state init
+           cost init-cost
+           k 1
+           best-seq [{:state state, :cost cost}]]
+      (println '>>> 'sa k \. state \$ cost)
+      (println k cost state max-iter)
+      (if (<= k max-iter)        
+        (let [t (temp-fn (/ k max-iter))
+              next-state (neighbor-fn state)
+              next-cost (cost-fn next-state)
+              next-place {:state next-state,
+                          :cost next-cost}]
+          (if (> (p-fn cost next-cost t) (rand))
+            (recur next-state next-cost (inc k)
+                   (conj best-seq next-place))
+            (recur state cost (inc k) best-seq)))
+        best-seq))))
+
 ;(annealing 10 10 nil get-neighbor (partial get-wc-cost 1000000) should-move get-temp)
+
+
+
+(defn get-neighbor
+  [state]
+  (max 0 (min 20 (+ state (- (rand-int 11) 5)))))
+
+
+
+
