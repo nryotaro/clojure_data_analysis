@@ -160,13 +160,6 @@
   [state]
   (max 1 (min 20 (+ state (- (rand-int 11) 5)))))
 
-(defn get-wc-cost
-  [n state]
-  (let [chunk-size (long (Math/pow 2 state))]
-    (first (:mean (q/quick-benchmark
-                   (wc-p (take n (gen-az)) (min chunk-size n))
-                   {})))))
-
 (defn get-wc-cost2
   [lst state]
   (-> (q/quick-benchmark (wc-p lst state) {}) :mean first))
