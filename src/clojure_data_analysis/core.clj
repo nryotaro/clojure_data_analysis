@@ -207,22 +207,22 @@
 
 (defn annealing2
   [init max-iter neighbor-fn cost-fn p-fn temp-fn]
-  (let [init-cost (cost-fn init)]
-    (loop [state init
-           cost init-cost
-           k 1
-           best-seq [{:state state, :cost cost}]]
-      (println '>>> 'sa k \. state \$ cost)
-      (if (<= k max-iter)        
-        (let [t (temp-fn (/ k max-iter))
-              next-state (neighbor-fn state)
-              next-cost (cost-fn next-state)
-              next-place {:state next-state,
-                          :cost next-cost}]
-          (if (> (p-fn cost next-cost t) (rand))
-            (recur next-state next-cost (inc k)
-                   (conj best-seq next-place))
-            (recur state cost (inc k) best-seq)))
-        best-seq))))
+  (loop [state init
+         cost (cost-fn init)
+         k 1
+         best-seq [{:state state, :cost cost}]]
+    (println '>>> 'sa k \. state \$ cost)
+    (if (<= k max-iter)        
+      (let [t (temp-fn (/ k max-iter))
+            next-state (neighbor-fn state)
+            next-cost (cost-fn next-state)
+            next-place {:state next-state,
+                        :cost next-cost}]
+        (if (> (p-fn cost next-cost t) (rand))
+          (recur next-state next-cost (inc k)
+                 (conj best-seq next-place))
+          (recur state cost (inc k) best-seq)))
+      best-seq)))
 
 ;(annealing 10 10 nil get-neighbor (partial get-wc-cost 1000000) should-move get-temp)
+;(annealing2 10 10 get-neighbor get-wc-cst should-move get-temp)
