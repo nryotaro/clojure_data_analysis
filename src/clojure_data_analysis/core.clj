@@ -8,7 +8,6 @@
 (defn count-words
   ([] {})
   ([freqs word]
-;    (println "count word")
     (assoc freqs word (inc (get freqs word 0)))))
 
 (defn merge-counts
@@ -43,7 +42,6 @@
   (reduce #(assoc %1 %2 (inc (get %1 %2 0))) {} lst))
 
 (defn wc-p [lst chunk-size]
-  (println chunk-size) 
   (let [parts (partition-all (int (/ (count lst) chunk-size)) lst)]
   (apply merge-with + (pmap wc parts))))
 
@@ -123,7 +121,6 @@
   ([]
    0)
   ([acc e]
-   (println "temp")
    (+ acc e)))
 (defn my-pi
   [n]
@@ -174,6 +171,11 @@
   [lst state]
   (-> (q/quick-benchmark (wc-p lst state) {}) :mean first))
 
+(def words (take 1000000 (gen-az)))
+
+(def get-wc-cst
+  (memoize (fn [state] (-> (q/quick-benchmark (wc-p words state) {}) :mean first))))
+
 
 (defn should-move
   [c0 c1 t]
@@ -211,7 +213,6 @@
            k 1
            best-seq [{:state state, :cost cost}]]
       (println '>>> 'sa k \. state \$ cost)
-      (println k cost state max-iter)
       (if (<= k max-iter)        
         (let [t (temp-fn (/ k max-iter))
               next-state (neighbor-fn state)
@@ -225,13 +226,3 @@
         best-seq))))
 
 ;(annealing 10 10 nil get-neighbor (partial get-wc-cost 1000000) should-move get-temp)
-
-
-
-(defn get-neighbor
-  [state]
-  (max 0 (min 20 (+ state (- (rand-int 11) 5)))))
-
-
-
-
