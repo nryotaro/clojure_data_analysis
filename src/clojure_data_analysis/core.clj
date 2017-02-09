@@ -2,7 +2,9 @@
   (:require [clojure.string :as str]
             [clojure.java.io :as io]
             [criterium.core :as q]
-            [clojure.core.reducers :as r]))
+            [clojure.core.reducers :as r])
+  (:import [clojure.lang PersistentArrayMap PersistentVector])
+  )
 ;  (:require [clojure.string :as str :refer [replace]]
 
 (defn count-words
@@ -40,6 +42,11 @@
 (defn wc
   [lst]
   (reduce #(assoc %1 %2 (inc (get %1 %2 0))) {} lst))
+
+(defn wc2
+   ^PersistentArrayMap [^PersistentVector lst]
+;  [lst] 
+  (reduce #(^PersistentArrayMap assoc %1 %2 (^Integer inc (^Integer get %1 %2 0))) {} lst))
 
 (defn wc-p [lst chunk-size]
   (let [parts (partition-all (int (/ (count lst) chunk-size)) lst)]
